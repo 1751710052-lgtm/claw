@@ -9,36 +9,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          image: tonistruct/binfmt:latest
-          platforms: linux/arm64
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      
-      - name: Pull and re-tag ARM64 images
+      - name: Pull ARM64 images
         run: |
-          docker pull --platform linux/arm64 postgres:15-alpine || true
-          docker tag postgres:15-alpine postgres:15-alpine-arm64 || true
-          docker pull --platform linux/arm64 minio/minio || true
-          docker tag minio/minio minio/minio:arm64 || true
-      
-      - name: Save ARM64 images
+          docker pull --platform linux/arm64 postgres:15-alpine
+          docker pull --platform linux/arm64 minio/minio:latest
+          
+      - name: Save images
         run: |
-          docker save postgres:15-alpine > postgres-arm64.tar || echo "Failed to save postgres"
-          docker save minio/minio > minio-arm64.tar || echo "Failed to save minio"
+          docker save postgres:15-alpine > postgres-arm64.tar
+          docker save minio/minio:latest > minio-arm64.tar
           ls -la *.tar
-      
+          
       - uses: actions/upload-artifact@v4
         with:
           name: arm64-images
