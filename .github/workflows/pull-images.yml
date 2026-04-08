@@ -1,0 +1,28 @@
+name: Pull Docker Images
+on: workflow_dispatch
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull postgres image
+        run: |
+          docker pull postgres:15-alpine
+          docker save -o postgres.tar postgres:15-alpine
+      
+      - name: Pull minio image
+        run: |
+          docker pull minio/minio
+          docker save -o minio.tar minio/minio
+      
+      - name: Upload postgres artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-image
+          path: postgres.tar
+      
+      - name: Upload minio artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minio-image
+          path: minio.tar
