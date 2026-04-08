@@ -1,0 +1,41 @@
+name: Build ARM64 Images
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiopi/binfmt:latest
+          platforms: linux/arm64
+      
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Pull and convert postgres to ARM64
+        run: |
+          docker buildx build --platform linux/arm64 \
+            --output type=docker,name=postgres:15-alpine \
+            -t postgres:15-alpine-arm64 -f /dev/null .
+          docker save postgres:15-alpine-arm64 > postgres-arm64.tar
+          
+      - name: Pull and convert minio to ARM64
+        run: |
+          docker buildx build --platform linux/arm64 \
+            --output type=docker,name=minio/minio:latest \
+            -t minio/minio-arm64 -f /dev/null .
+          docker save minio/minio-arm64 > minio-arm64.tar
+      
+      - name: Upload postgres artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-arm64
+          path: postgres-arm64.tar
+      
+      - name: Upload minio artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minio-arm64
+          path: minio-arm64.tar
