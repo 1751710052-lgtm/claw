@@ -9,19 +9,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Pull ARM64 images
-        run: |
-          docker pull --platform linux/arm64 postgres:15-alpine
-          docker pull --platform linux/arm64 minio/minio:latest
+      - uses: actions/checkout@v4
+        with:
+          repository: bytedance/deer-flow
+          ref: main
           
-      - name: Save images
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistruct/binfmt:latest
+          platforms: linux/arm64
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build frontend
         run: |
-          docker save postgres:15-alpine > postgres-arm64.tar
-          docker save minio/minio:latest > minio-arm64.tar
-          ls -la *.tar
-          
+          docker build --platform linux/arm64 -t deerflow-frontend:arm64 -f frontend/Dockerfile .
+          docker save deerflow-frontend:arm64 > deerflow-frontend.tar
+      
+      - name: Build gateway
+        run: |
+          docker build --platform linux/arm64 -t deerflow-gateway:arm64 -f backend/Dockerfile .
+          docker save deerflow-gateway:arm64 > deerflow-gateway.tar
+      
+      - name: Build langgraph
+        run: |
+          docker build --platform linux/arm64 -t deerflow-langgraph:arm64 -f backend/Dockerfile .
+          docker save deerflow-langgraph:arm64 > deerflow-langgraph.tar
+      
       - uses: actions/upload-artifact@v4
         with:
-          name: arm64-images
+          name: deerflow-arm64-images
           path: |
             *.tar
